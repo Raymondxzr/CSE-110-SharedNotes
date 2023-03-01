@@ -2,10 +2,20 @@ package edu.ucsd.cse110.sharednotes.model;
 
 import android.util.Log;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.google.gson.Gson;
 
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class NoteAPI {
     // TODO: Implement the API using OkHttp!
@@ -49,4 +59,42 @@ public class NoteAPI {
             e.printStackTrace();
         }
     }
+
+    public static class PostNote {
+        public final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+
+        private final OkHttpClient client = new OkHttpClient();
+
+        public String post(Note note) throws IOException {
+            Gson gson = new Gson();
+            String json = gson.toJson(note);
+            RequestBody body = RequestBody.create(json, JSON);
+            String url = "https://sharednotes.goto.ucsd.edu/note/" + note.title;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                return response.body().toString();
+            }
+        }
+        public LiveData<Note> get(String title) throws IOException {
+            MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+            String url = "https://sharednotes.goto.ucsd.edu/note/" + title;
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                String json = response.body().string();
+                Gson gson = new Gson();
+                Note note = gson.fromJson(json, Note.class);
+                noteLiveData.postValue(note);
+                return noteLiveData;
+
+            }
+        }
+
+
+    }
+
 }
