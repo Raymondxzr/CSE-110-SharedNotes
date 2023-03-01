@@ -2,9 +2,12 @@ package edu.ucsd.cse110.sharednotes.model;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class NoteRepository {
     private final NoteDao dao;
@@ -21,7 +24,7 @@ public class NoteRepository {
      * updated when the note is updated either locally or remotely on the server. Our activities
      * however will only need to observe this one LiveData object, and don't need to care where
      * it comes from!
-     *
+     * <p>
      * This method will always prefer the newest version of the note.
      *
      * @param title the title of the note
@@ -87,8 +90,18 @@ public class NoteRepository {
         // Then, set up a background thread that will poll the server every 3 seconds.
         // You may (but don't have to) want to cache the LiveData's for each title, so that
         // you don't create a new polling thread every time you call getRemote with the same title.
-        throw new UnsupportedOperationException("Not implemented yet");
+        LiveData<Note> remoteNote = getSynced(title);
+
+        // Then, set up a background thread that will poll the server every 3 seconds.
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleAtFixedRate(() -> {
+            getSynced(title);
+        }, 0, 3, TimeUnit.SECONDS);
+
+        return remoteNote;
+//        throw new UnsupportedOperationException("Not implemented yet");
     }
+
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
