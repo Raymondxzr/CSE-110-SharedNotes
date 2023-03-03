@@ -114,18 +114,20 @@ public class NoteRepository {
 //        }, 0, 3, TimeUnit.SECONDS);
         MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
         Note note = api.get(title);
-        if(note!=null){
+
+        Note localNote = getLocal(title).getValue();
+        if(note!=null && note.version > localNote.version){
             upsertLocal(note);
             noteLiveData.postValue(note);
         }
         ScheduledExecutorService temp = Executors.newSingleThreadScheduledExecutor();
         temp.scheduleAtFixedRate(()->{
             Note tempN = api.get(title);
-            if (tempN != null) {
+            if (tempN != null  && note.version > localNote.version) {
                 upsertLocal(tempN);
                 noteLiveData.postValue(tempN);
             }
-        },0,20,TimeUnit.SECONDS);
+        },0,10,TimeUnit.SECONDS);
 
         // Check if the note exists on the server
 //        try {
@@ -161,8 +163,8 @@ public class NoteRepository {
         // TODO: Implement upsertRemote!
 //        dao.upsert(note);
         //NoteAPI example = new NoteAPI();
-        //note.version = note.version + 1;
-       api.postAsy(note);
+        note.version = note.version + 1;
+        api.postAsy(note);
 //
 //        throw new UnsupportedOperationException("Not implemented yet");
     }

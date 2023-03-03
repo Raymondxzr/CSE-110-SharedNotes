@@ -88,9 +88,8 @@ public class NoteAPI {
         var json =gson.toJson(note);
 
         var theBody = RequestBody.create(json,JSON);
-        String theTitle =  note.title;
         var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/echo/" +theTitle)
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + note.title)
                 .put(theBody)
                 .build();
 

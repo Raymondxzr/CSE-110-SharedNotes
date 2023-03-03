@@ -43,7 +43,7 @@ public class NoteViewModel extends AndroidViewModel {
 //        return note;
 
 //
-        if(note ==null){
+        if (note == null) {
             note = repo.getSynced(title);
         }
         return note;
@@ -53,10 +53,9 @@ public class NoteViewModel extends AndroidViewModel {
 
     public void save(Note note) {
         // TODO: try to upload the note to the server.
-        //repo.upsertLocal(note);
         repo.upsertSynced(note);
-//        repo.upsertLocal(repo.getRemote(note.title).getValue());
-        repo.upsertRemote(note);
+//        repo.upsertRemote(note);
+//        note.version+=1;
 
     }
 }
