@@ -105,67 +105,34 @@ public class NoteRepository {
 
         // You may (but don't have to) want to cache the LiveData's for each title, so that
         // you don't create a new polling thread every time you call getRemote with the same title.
-//        LiveData<Note> remoteNote = getSynced(title);
 
-        // Then, set up a background thread that will poll the server every 3 seconds.
-//        var executor = Executors.newSingleThreadScheduledExecutor();
-//        executor.scheduleAtFixedRate(() -> {
-//            getSynced(title);
-//        }, 0, 3, TimeUnit.SECONDS);
         MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
         Note note = api.get(title);
-
+// && note.version > localNote.version
         Note localNote = getLocal(title).getValue();
-        if(note!=null && note.version > localNote.version){
+        if(note!=null){
             upsertLocal(note);
             noteLiveData.postValue(note);
         }
         ScheduledExecutorService temp = Executors.newSingleThreadScheduledExecutor();
         temp.scheduleAtFixedRate(()->{
             Note tempN = api.get(title);
-            if (tempN != null  && note.version > localNote.version) {
+            if (tempN != null) {
                 upsertLocal(tempN);
                 noteLiveData.postValue(tempN);
             }
-        },0,10,TimeUnit.SECONDS);
+        },0,3,TimeUnit.SECONDS);
 
-        // Check if the note exists on the server
-//        try {
-//            NoteAPI p = new NoteAPI();
-//            Note existingNote = p.get(title).getValue();
-//            if (existingNote != null) {
-//                noteLiveData.postValue(existingNote);
-//                return noteLiveData;
-//            }
-//        } catch (IOException e) {
-//            // Handle the exception
-//            e.printStackTrace();
-//        }
-
-        // If the note doesn't exist on the server or there was an error fetching it, return an empty note
-//        Note emptyNote = new Note();
-//        emptyNote.title = title;
-//        noteLiveData.postValue(emptyNote);
-//        return noteLiveData;
         return noteLiveData;
 
     }
 
-//        return remoteNote;
-    // You don't need to worry about killing background threads.
-
-//        throw new UnsupportedOperationException("Not implemented yet");
-
-//        throw new UnsupportedOperationException("Not implemented yet");
-
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-//        dao.upsert(note);
-        //NoteAPI example = new NoteAPI();
+
         note.version = note.version + 1;
         api.postAsy(note);
-//
-//        throw new UnsupportedOperationException("Not implemented yet");
+
     }
 }

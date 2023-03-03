@@ -37,12 +37,12 @@ public class NoteAPI {
     private volatile static NoteAPI instance = null;
 
     private OkHttpClient client;
-    private static  final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private final Gson gson;
 
     public NoteAPI() {
         this.client = new OkHttpClient();
-        this.gson=new Gson();
+        this.gson = new Gson();
     }
 
     public static NoteAPI provide() {
@@ -81,13 +81,10 @@ public class NoteAPI {
         }
     }
 
-//        public final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-
-
     public boolean post(Note note) {
-        var json =gson.toJson(note);
+        var json = gson.toJson(note);
 
-        var theBody = RequestBody.create(json,JSON);
+        var theBody = RequestBody.create(json, JSON);
         var request = new Request.Builder()
                 .url("https://sharednotes.goto.ucsd.edu/notes/" + note.title)
                 .put(theBody)
@@ -128,15 +125,16 @@ public class NoteAPI {
 //        });
 //
 //        return noteLiveData;
-// }   }
+//    }
     }
-    public Future<Boolean> postAsy(Note note){
+
+    public Future<Boolean> postAsy(Note note) {
         var executor = Executors.newSingleThreadExecutor();
-        return executor.submit(()-> post(note));
+        return executor.submit(() -> post(note));
     }
 
 
-    public Note get(String title){
+    public Note get(String title) {
         //MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
         String url = "https://sharednotes.goto.ucsd.edu/notes/" + title;
         Request request = new Request.Builder()
@@ -150,7 +148,7 @@ public class NoteAPI {
             Note note = gson.fromJson(body, Note.class);
             return note;
             //noteLiveData.postValue(note);
-           // return noteLiveData;
+            // return noteLiveData;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

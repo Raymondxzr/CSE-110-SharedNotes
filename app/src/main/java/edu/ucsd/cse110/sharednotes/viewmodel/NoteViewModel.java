@@ -34,15 +34,7 @@ public class NoteViewModel extends AndroidViewModel {
         // the database, or when the server returns a newer version of the note.
         // Polling interval: 3s.
         note = repo.getSynced(title);
-//        System.out.println(note.getValue().title);
-//        note = repo.getRemote(title);
-//        if (note == null) {
-//            note = repo.getLocal(title);
-//        }
-//
-//        return note;
 
-//
         if (note == null) {
             note = repo.getSynced(title);
         }
