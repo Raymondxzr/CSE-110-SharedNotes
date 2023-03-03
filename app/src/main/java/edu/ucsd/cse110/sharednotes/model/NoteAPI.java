@@ -12,6 +12,7 @@ import java.io.IOException;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
+
 import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.WorkerThread;
@@ -50,9 +51,9 @@ public class NoteAPI {
 
     /**
      * An example of sending a GET request to the server.
-     *
+     * <p>
      * The /echo/{msg} endpoint always just returns {"message": msg}.
-     *
+     * <p>
      * This method should can be called on a background thread (Android
      * disallows network requests on the main thread).
      */
@@ -77,42 +78,61 @@ public class NoteAPI {
         }
     }
 
-    public static class PostNote {
-        public final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+//        public final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-        private final OkHttpClient client = new OkHttpClient();
 
-        public String post(Note note) throws IOException {
-            Gson gson = new Gson();
-            String json = gson.toJson(note);
-            RequestBody body = RequestBody.create(json, JSON);
-            String url = "https://sharednotes.goto.ucsd.edu/note/" + note.title;
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
-            try (Response response = client.newCall(request).execute()) {
-                return response.body().toString();
+    public LiveData<Note> post(Note note) {
+        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+        Gson gson = new Gson();
+        String json = gson.toJson(note);
+        String url = "https://sharednotes.goto.ucsd.edu/note/" + note.title;
+        RequestBody requestBody = RequestBody.create(json, MediaType.get("application/json"));
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Handle the failure here.
+                e.printStackTrace();
             }
-        }
-        public LiveData<Note> get(String title) throws IOException {
-            MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
-            String url = "https://sharednotes.goto.ucsd.edu/note/" + title;
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
-            try (Response response = client.newCall(request).execute()) {
-                String json = response.body().string();
-                Gson gson = new Gson();
-                Note note = gson.fromJson(json, Note.class);
-                noteLiveData.postValue(note);
-                return noteLiveData;
 
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
+                }
+                // Parse the response into a Note object.
+                Note savedNote = gson.fromJson(response.body().string(), Note.class);
+                noteLiveData.postValue(savedNote);
             }
-        }
+        });
 
-
+        return noteLiveData;
     }
+
+
+    public LiveData<Note> get(String title) throws IOException {
+        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+        String url = "https://sharednotes.goto.ucsd.edu/note/" + title;
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            String body = response.body().string();
+            Gson gson = new Gson();
+            Note note = gson.fromJson(body, Note.class);
+            noteLiveData.postValue(note);
+            return noteLiveData;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     @AnyThread
     public Future<String> echoAsync(String msg) {

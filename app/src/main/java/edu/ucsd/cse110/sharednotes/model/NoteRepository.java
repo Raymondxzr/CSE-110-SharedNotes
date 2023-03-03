@@ -16,6 +16,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Request;
 import okhttp3.Response;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -109,37 +110,45 @@ public class NoteRepository {
 //        executor.scheduleAtFixedRate(() -> {
 //            getSynced(title);
 //        }, 0, 3, TimeUnit.SECONDS);
-        LiveData<Note> remoteNote;
-//        NoteAPI api = NoteAPI.provide();
-//        api.getNote(title, new Callback());
-        NoteAPI.PostNote example = new NoteAPI.PostNote();
+        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+
+        // Check if the note exists on the server
         try {
-            remoteNote = example.get(title);
-            return remoteNote;
-
+            NoteAPI p = new NoteAPI();
+            Note existingNote = p.get(title).getValue();
+            if (existingNote != null) {
+                noteLiveData.postValue(existingNote);
+                return noteLiveData;
+            }
         } catch (IOException e) {
-            Log.e("NoteAPI", "Error getting note to server", e);
+            // Handle the exception
+            e.printStackTrace();
         }
+
+        // If the note doesn't exist on the server or there was an error fetching it, return an empty note
+//        Note emptyNote = new Note();
+//        emptyNote.title = title;
+//        noteLiveData.postValue(emptyNote);
+//        return noteLiveData;
         return null;
-        // You don't need to worry about killing background threads.
 
-//        throw new UnsupportedOperationException("Not implemented yet");
     }
+
+//        return remoteNote;
+    // You don't need to worry about killing background threads.
+
 //        throw new UnsupportedOperationException("Not implemented yet");
 
-
+//        throw new UnsupportedOperationException("Not implemented yet");
 
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-
-        NoteAPI.PostNote example = new NoteAPI.PostNote();
-        try {
-//            note.updatedAt = System.currentTimeMillis();
-            example.post(note);
-        } catch (IOException e) {
-            Log.e("NoteAPI", "Error upserting note to server", e);
-        }
+//        dao.upsert(note);
+        NoteAPI example = new NoteAPI();
+        note.version = note.version + 1;
+        example.post(note);
+//
 //        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
