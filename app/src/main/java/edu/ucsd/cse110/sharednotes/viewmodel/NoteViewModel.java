@@ -42,14 +42,10 @@ public class NoteViewModel extends AndroidViewModel {
 //
 //        return note;
 
-        var executor = Executors.newSingleThreadScheduledExecutor();
-        var pollingFuture = executor.scheduleAtFixedRate(() -> {
-            var remoteNote = repo.getRemote(title).getValue();
-            if (remoteNote != null) {
-                repo.upsertLocal(remoteNote);
-            }
-        }, 0, 3, TimeUnit.SECONDS);
-
+//
+        if(note ==null){
+            note = repo.getSynced(title);
+        }
         return note;
 
 
@@ -57,7 +53,8 @@ public class NoteViewModel extends AndroidViewModel {
 
     public void save(Note note) {
         // TODO: try to upload the note to the server.
-        repo.upsertLocal(note);
+        //repo.upsertLocal(note);
+        repo.upsertSynced(note);
 //        repo.upsertLocal(repo.getRemote(note.title).getValue());
         repo.upsertRemote(note);
 

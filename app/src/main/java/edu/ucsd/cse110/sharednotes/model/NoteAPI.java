@@ -37,9 +37,12 @@ public class NoteAPI {
     private volatile static NoteAPI instance = null;
 
     private OkHttpClient client;
+    private static  final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private final Gson gson;
 
     public NoteAPI() {
         this.client = new OkHttpClient();
+        this.gson=new Gson();
     }
 
     public static NoteAPI provide() {
@@ -81,52 +84,74 @@ public class NoteAPI {
 //        public final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
 
-    public LiveData<Note> post(Note note) {
-        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
-        Gson gson = new Gson();
-        String json = gson.toJson(note);
-        String url = "https://sharednotes.goto.ucsd.edu/note/" + note.title;
-        RequestBody requestBody = RequestBody.create(json, MediaType.get("application/json"));
-        Request request = new Request.Builder()
-                .url(url)
-                .post(requestBody)
+    public boolean post(Note note) {
+        var json =gson.toJson(note);
+
+        var theBody = RequestBody.create(json,JSON);
+        String theTitle =  note.title;
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/echo/" +theTitle)
+                .put(theBody)
                 .build();
 
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                // Handle the failure here.
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-                // Parse the response into a Note object.
-                Note savedNote = gson.fromJson(response.body().string(), Note.class);
-                noteLiveData.postValue(savedNote);
-            }
-        });
-
-        return noteLiveData;
+        try (var response = client.newCall(request).execute()) {
+            return response.isSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+//        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+//        Gson gson = new Gson();
+//        String json = gson.toJson(note);
+//        String url = "https://sharednotes.goto.ucsd.edu/notes/" + note.title;
+//        RequestBody requestBody = RequestBody.create(json, MediaType.get("application/json"));
+//        Request request = new Request.Builder()
+//                .url(url)
+//                .post(requestBody)
+//                .build();
+//
+//        client.newCall(request).enqueue(new Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                // Handle the failure here.
+//                e.printStackTrace();
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                if (!response.isSuccessful()) {
+//                    throw new IOException("Unexpected code " + response);
+//                }
+//                // Parse the response into a Note object.
+//                Note savedNote = gson.fromJson(response.body().string(), Note.class);
+//                noteLiveData.postValue(savedNote);
+//            }
+//        });
+//
+//        return noteLiveData;
+// }   }
+    }
+    public Future<Boolean> postAsy(Note note){
+        var executor = Executors.newSingleThreadExecutor();
+        return executor.submit(()-> post(note));
     }
 
 
-    public LiveData<Note> get(String title) throws IOException {
-        MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
-        String url = "https://sharednotes.goto.ucsd.edu/note/" + title;
+    public Note get(String title){
+        //MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+        String url = "https://sharednotes.goto.ucsd.edu/notes/" + title;
         Request request = new Request.Builder()
                 .url(url)
+                .get()
                 .build();
         try (Response response = client.newCall(request).execute()) {
             assert response.body() != null;
             String body = response.body().string();
             Gson gson = new Gson();
             Note note = gson.fromJson(body, Note.class);
-            noteLiveData.postValue(note);
-            return noteLiveData;
+            return note;
+            //noteLiveData.postValue(note);
+           // return noteLiveData;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

@@ -23,9 +23,11 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class NoteRepository {
     private final NoteDao dao;
+    private final NoteAPI api;
 
     public NoteRepository(NoteDao dao) {
         this.dao = dao;
+        this.api=NoteAPI.provide();
     }
 
     // Synced Methods
@@ -111,26 +113,39 @@ public class NoteRepository {
 //            getSynced(title);
 //        }, 0, 3, TimeUnit.SECONDS);
         MutableLiveData<Note> noteLiveData = new MutableLiveData<>();
+        Note note = api.get(title);
+        if(note!=null){
+            upsertLocal(note);
+            noteLiveData.postValue(note);
+        }
+        ScheduledExecutorService temp = Executors.newSingleThreadScheduledExecutor();
+        temp.scheduleAtFixedRate(()->{
+            Note tempN = api.get(title);
+            if (tempN != null) {
+                upsertLocal(tempN);
+                noteLiveData.postValue(tempN);
+            }
+        },0,20,TimeUnit.SECONDS);
 
         // Check if the note exists on the server
-        try {
-            NoteAPI p = new NoteAPI();
-            Note existingNote = p.get(title).getValue();
-            if (existingNote != null) {
-                noteLiveData.postValue(existingNote);
-                return noteLiveData;
-            }
-        } catch (IOException e) {
-            // Handle the exception
-            e.printStackTrace();
-        }
+//        try {
+//            NoteAPI p = new NoteAPI();
+//            Note existingNote = p.get(title).getValue();
+//            if (existingNote != null) {
+//                noteLiveData.postValue(existingNote);
+//                return noteLiveData;
+//            }
+//        } catch (IOException e) {
+//            // Handle the exception
+//            e.printStackTrace();
+//        }
 
         // If the note doesn't exist on the server or there was an error fetching it, return an empty note
 //        Note emptyNote = new Note();
 //        emptyNote.title = title;
 //        noteLiveData.postValue(emptyNote);
 //        return noteLiveData;
-        return null;
+        return noteLiveData;
 
     }
 
@@ -145,9 +160,9 @@ public class NoteRepository {
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
 //        dao.upsert(note);
-        NoteAPI example = new NoteAPI();
-        note.version = note.version + 1;
-        example.post(note);
+        //NoteAPI example = new NoteAPI();
+        //note.version = note.version + 1;
+       api.postAsy(note);
 //
 //        throw new UnsupportedOperationException("Not implemented yet");
     }
