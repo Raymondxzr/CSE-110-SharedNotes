@@ -91,7 +91,6 @@ public class NoteRepository {
 
     public void deleteLocal(Note note) {
         dao.delete(note);
-        String title = note.title;
     }
 
     public boolean existsLocal(String title) {
@@ -156,7 +155,8 @@ public class NoteRepository {
         pollingFuture = executor.scheduleAtFixedRate(() -> {
             Note tempNote = api.get(title);
             if (tempNote != null) {
-                if (localNote == null || tempNote.version > localNote.version) {
+//                || tempNote.version > localNote.version
+                if (localNote == null ) {
                     upsertLocal(tempNote);
                 }
                 noteLiveData.postValue(tempNote);
@@ -172,7 +172,6 @@ public class NoteRepository {
 
     public void upsertRemote(Note note) {
         // TODO: Implement upsertRemote!
-
         note.version = note.version + 1;
         api.postAsy(note);
 
